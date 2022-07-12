@@ -2,54 +2,50 @@ package com.epam.esm.service.impl;
 
 import com.epam.esm.dto.CertificateTagsDto;
 import com.epam.esm.entity.GiftCertificate;
-import com.epam.esm.entity.Page;
-import com.epam.esm.entity.SelectQueryParameter;
+import com.epam.esm.entity.GiftCertificateFilter;
 import com.epam.esm.entity.Tag;
 import com.epam.esm.service.GiftCertificateService;
 import com.epam.esm.service.GiftCertificateTagDtoService;
 import com.epam.esm.service.TagService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
-import java.util.stream.StreamSupport;
 
 @Service
 @Transactional(rollbackFor = Exception.class)
+@RequiredArgsConstructor
 public class GiftCertificateTagDtoServiceImpl implements GiftCertificateTagDtoService {
     private final GiftCertificateService giftCertificateService;
     private final TagService tagService;
-
-    @Autowired
-    public GiftCertificateTagDtoServiceImpl(GiftCertificateService giftCertificateService, TagService tagService) {
-        this.giftCertificateService = giftCertificateService;
-        this.tagService = tagService;
-    }
 
     @Override
     public CertificateTagsDto addGiftCertificateTagDto(CertificateTagsDto certificateTagsDto) {
         GiftCertificate certificate = certificateTagsDto.certificate();
         Set<Tag> tags = certificateTagsDto.tags();
-        certificate.setTags(tags);
 
         Set<Tag> createdTags = tagService.addTags(tags);
+
+        certificate.setTags(createdTags);
         GiftCertificate createdCertificate = giftCertificateService.addGiftCertificate(certificate);
 
         return new CertificateTagsDto(createdCertificate, createdTags);
     }
 
     @Override
-    public Page<CertificateTagsDto> findAllGiftCertificateTagDto(int page, int size) {
-        Page<GiftCertificate> certificates = giftCertificateService.findAllCertificates(page, size);
+    public Page<CertificateTagsDto> findAllGiftCertificateTagDto(Pageable pageable) {
+        Page<GiftCertificate> certificates = giftCertificateService.findAllCertificates(pageable);
 
-        return convertCertificateListToCertificateTagsDto(certificates);
+        return convertCertificateToCertificateTagsDtoInPage(certificates);
     }
 
     @Override
-    public Page<CertificateTagsDto> findGiftCertificateTagDtoByParam(SelectQueryParameter params, int page, int size) {
-        Page<GiftCertificate> certificates = giftCertificateService.findCertificatesWithParams(params, page, size);
+    public Page<CertificateTagsDto> findGiftCertificateTagDtoByParam(GiftCertificateFilter filter, Pageable pageable) {
+        Page<GiftCertificate> certificates = giftCertificateService.findCertificatesWithParams(filter, pageable);
 
-        return convertCertificateListToCertificateTagsDto(certificates);
+        return convertCertificateToCertificateTagsDtoInPage(certificates);
     }
 
     @Override
@@ -76,13 +72,8 @@ public class GiftCertificateTagDtoServiceImpl implements GiftCertificateTagDtoSe
         return new CertificateTagsDto(updatedCertificate, updatedTags);
     }
 
-    private Page<CertificateTagsDto> convertCertificateListToCertificateTagsDto(Page<GiftCertificate> certificates) {
-        List<CertificateTagsDto> certificateTagsDtoList = StreamSupport
-                .stream(certificates.getEntities().spliterator(), false)
-                .map(cert -> new CertificateTagsDto(cert,
-                        tagService.findTagsByCertificateId(cert.getGiftCertificateId())))
-                .toList();
-
-        return new Page<>(certificateTagsDtoList, certificates.getPageMeta());
+    private Page<CertificateTagsDto> convertCertificateToCertificateTagsDtoInPage(Page<GiftCertificate> certificates) {
+        return certificates.map(cert ->
+                new CertificateTagsDto(cert, tagService.findTagsByCertificateId(cert.getGiftCertificateId())));
     }
 }

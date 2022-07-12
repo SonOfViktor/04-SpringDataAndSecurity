@@ -1,8 +1,11 @@
 package com.epam.esm.service;
 
-import com.epam.esm.entity.Page;
 import com.epam.esm.entity.Tag;
 import com.epam.esm.exception.ResourceNotFoundException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Set;
 
@@ -29,11 +32,10 @@ public interface TagService {
     /**
      * Find specified page with tags.
      *
-     * @param page number of page with tags
-     * @param size amount objects in one page
+     * @param pageable the pageable to request a paged result, can be Pageable.unpaged(), must not be null.
      * @return the page with tags
      */
-    Page<Tag> findAllTags(int page, int size);
+    Page<Tag> findAllTags(Pageable pageable);
 
     /**
      * Find tags related to gift certificate with specified id.
@@ -47,11 +49,10 @@ public interface TagService {
      * Find page with tags related to gift certificate with specified id
      *
      * @param certificateId gift certificate id
-     * @param page number of page with tags
-     * @param size amount objects in one page
+     * @param pageable the pageable to request a paged result, can be Pageable.unpaged(), must not be null.
      * @return the page with tags related to gift certificate with specified id
      */
-    Page<Tag> findTagsByCertificateId(int certificateId, int page, int size);
+    Page<Tag> findTagsByCertificateId(int certificateId, Pageable pageable);
 
     /**
      * Find tag with specified id.
@@ -73,8 +74,7 @@ public interface TagService {
      * Delete tag with specified id.
      *
      * @param tagId the tag id
-     * @return 1 if specified tag was deleted
-     * @throws ResourceNotFoundException if tag with specified id wasn't found
+     * @throws EmptyResultDataAccessException if tag with specified id wasn't found
      */
-    int deleteTag(int tagId);
+    void deleteTag(int tagId);
 }

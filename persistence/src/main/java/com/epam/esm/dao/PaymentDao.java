@@ -1,60 +1,28 @@
 package com.epam.esm.dao;
 
 import com.epam.esm.entity.Payment;
-import com.epam.esm.entity.UserOrder;
-import java.util.List;
-import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
-public interface PaymentDao {
-    /**
-     * Add payment to database
-     *
-     * @param payment the payment to add
-     * @return the payment with generated id by database
-     */
-    Payment createPayment(Payment payment);
-
-    /**
-     * Read payment with specified id from database
-     *
-     * @param paymentId id of searched payment
-     * @return return optional payment with specified id if exist in database otherwise empty optional
-     */
-    Optional<Payment> readPayment(int paymentId);
+/**
+ * The interface provided methods to control data in database table related with payments.
+ */
+public interface PaymentDao extends JpaRepository<Payment, Integer> {
+    String SELECT_PAYMENT_BY_USER_ID_HQL = """
+            select p from Payment p
+            join p.user u
+            where u.userId = :id
+            """;
 
     /**
      * Read payments that made user with specified id
      *
-     * @param userId id of a user
-     * @param offset initial offset in table with payments
-     * @param size amount payments to extract from table with payments
+     * @param id the id of a user
+     * @param pageable the pageable to request a paged result, can be Pageable.unpaged(), must not be null.
      * @return payments that user with specified id made
      */
-    List<Payment> readPaymentByUserId(int userId, int offset, int size);
-
-    /**
-     * Find out amount of entries in table with payments related to user with specified id
-     *
-     * @param userId id of a user
-     * @return amount of entries in table with payments related to user with specified id
-     */
-    int countUserPayments(int userId);
-
-    /**
-     * Read orders that made in payment with specified id
-     *
-     * @param paymentId id of a payment
-     * @param offset initial offset in table with orders
-     * @param size amount certificates to extract from table with orders
-     * @return orders that made in payment with specified id
-     */
-    List<UserOrder> readUserOrderByPaymentId(int paymentId, int offset, int size);
-
-    /**
-     * Find out amount of entries in table with orders related to payment with specified id
-     *
-     * @param paymentId id of a payment
-     * @return amount of entries in table with orders related to payment with specified id
-     */
-    int countPaymentOrders(int paymentId);
+    @Query(SELECT_PAYMENT_BY_USER_ID_HQL)
+    Page<Payment> findByUserId(int id, Pageable pageable);
 }

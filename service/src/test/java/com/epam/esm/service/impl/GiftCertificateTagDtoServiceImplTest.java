@@ -8,6 +8,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +41,7 @@ class GiftCertificateTagDtoServiceImplTest {
         giftCertificateList.get(0).setGiftCertificateId(1);
         giftCertificateList.get(1).setGiftCertificateId(2);
 
-        tags = Set.of(new Tag("food"), new Tag("summer"));
+        tags = Set.of(new Tag(0, "food"), new Tag(0, "summer"));
 
         certificateTagsDtoList = giftCertificateList.stream()
                 .map((cert) -> new CertificateTagsDto(cert, tags))
@@ -70,27 +74,29 @@ class GiftCertificateTagDtoServiceImplTest {
 
     @Test
     void testFindAllGiftCertificateTagDto() {
-        Page<GiftCertificate> page = new Page<>(giftCertificateList, new PageMeta(10, 2, 1, 1));
-        when(giftCertificateService.findAllCertificates(1, 10)).thenReturn(page);
+        Pageable pageable = PageRequest.of(1, 10);
+        Page<GiftCertificate> page = new PageImpl<>(giftCertificateList, pageable, 2);
+        when(giftCertificateService.findAllCertificates(pageable)).thenReturn(page);
         when(tagService.findTagsByCertificateId(anyInt())).thenReturn(tags);
 
-        Page<CertificateTagsDto> actual = giftCertificateTagDtoService.findAllGiftCertificateTagDto(1, 10);
-        Page<CertificateTagsDto> expected = new Page<>(certificateTagsDtoList, new PageMeta(10, 2, 1, 1));
+        Page<CertificateTagsDto> actual = giftCertificateTagDtoService.findAllGiftCertificateTagDto(pageable);
+        Page<CertificateTagsDto> expected = new PageImpl<>(certificateTagsDtoList, pageable, 2);
 
         assertEquals(expected, actual);
     }
 
     @Test
     void testFindGiftCertificateTagDtoByParam() {
-        Page<GiftCertificate> page = new Page<>(giftCertificateList, new PageMeta(10, 2, 1, 1));
-        SelectQueryParameter selectQueryParameter = new SelectQueryParameter(null, null, null, null, null);
+        Pageable pageable = PageRequest.of(1, 10);
+        Page<GiftCertificate> page = new PageImpl<>(giftCertificateList, pageable, 2);
+        GiftCertificateFilter giftCertificateFilter = new GiftCertificateFilter(null, null, null);
 
-        when(giftCertificateService.findCertificatesWithParams(selectQueryParameter, 1, 10)).thenReturn(page);
+        when(giftCertificateService.findCertificatesWithParams(giftCertificateFilter, pageable)).thenReturn(page);
         when(tagService.findTagsByCertificateId(anyInt())).thenReturn(tags);
 
-        Page<CertificateTagsDto> expected = new Page<>(certificateTagsDtoList, new PageMeta(10, 2, 1, 1));
+        Page<CertificateTagsDto> expected = new PageImpl<>(certificateTagsDtoList, pageable, 2);
         Page<CertificateTagsDto> actual = giftCertificateTagDtoService
-                .findGiftCertificateTagDtoByParam(selectQueryParameter, 1, 10);
+                .findGiftCertificateTagDtoByParam(giftCertificateFilter, pageable);
 
         assertEquals(expected, actual);
     }

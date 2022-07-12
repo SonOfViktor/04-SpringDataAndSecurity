@@ -39,9 +39,11 @@ VALUES (1, 2),
 -- -----------------------------------------------------
 -- Table `module_4`.`users`
 -- -----------------------------------------------------
-INSERT INTO module_4.users (first_name, last_name)
-VALUES ('Ivan', 'Pupkin'),
-       ('Sanek', 'Lupkin');
+INSERT INTO module_4.users (email, password, first_name, last_name, role)
+VALUES ('Ivan_Pupkin@gmail.com',
+        '$2a$12$8jtm/F2lKTrxJKR1N4z1m.RTFmtAn7VIQ2IHLjtk/wTxd.2Vlmkb6', 'Ivan', 'Pupkin', 'ADMIN'),
+       ('Sanek_Lupkin.gmail.com',
+        '$2a$12$8jtm/F2lKTrxJKR1N4z1m.RTFmtAn7VIQ2IHLjtk/wTxd.2Vlmkb6','Sanek', 'Lupkin', 'USER');
 
 -- -----------------------------------------------------
 -- Table `module_4`.`payments`

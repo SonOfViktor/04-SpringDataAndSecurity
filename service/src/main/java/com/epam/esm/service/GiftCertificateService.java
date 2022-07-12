@@ -1,9 +1,11 @@
 package com.epam.esm.service;
 
 import com.epam.esm.entity.GiftCertificate;
-import com.epam.esm.entity.Page;
-import com.epam.esm.entity.SelectQueryParameter;
+import com.epam.esm.entity.GiftCertificateFilter;
 import com.epam.esm.exception.ResourceNotFoundException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * The interface provide methods to control business logic related with gift certificates
@@ -20,23 +22,21 @@ public interface GiftCertificateService {
     /**
      * Find gift certificates for specified page.
      *
-     * @param page number of page with gift certificates
-     * @param size amount objects in one page
+     * @param pageable the pageable to request a paged result, can be Pageable.unpaged(), must not be null.
      * @return the page with gift certificates
      * @throws ResourceNotFoundException if page with gift certificates doesn't exist
      */
-    Page<GiftCertificate> findAllCertificates(int page, int size);
+    Page<GiftCertificate> findAllCertificates(Pageable pageable);
 
     /**
      * Find gift certificates for specified page according to specified parameters.
      *
      * @param params the parameters determinant search for gift certificates
-     * @param page number of page with gift certificates
-     * @param size amount objects in one page
+     * @param pageable the pageable to request a paged result, can be Pageable.unpaged(), must not be null.
      * @return the list with gift certificates according to specified parameters
      * @throws ResourceNotFoundException if page with gift certificates doesn't exist
      */
-    Page<GiftCertificate> findCertificatesWithParams(SelectQueryParameter params, int page, int size);
+    Page<GiftCertificate> findCertificatesWithParams(GiftCertificateFilter params, Pageable pageable);
 
     /**
      * Find gift certificate with specified id.
@@ -61,8 +61,7 @@ public interface GiftCertificateService {
      * Delete gift certificate with specified id.
      *
      * @param certificateId the certificate id
-     * @return 1 if specified gift certificate was deleted
-     * @throws ResourceNotFoundException if gift certificate wasn't found
+     * @throws EmptyResultDataAccessException if gift certificate wasn't found
      */
-    int deleteCertificate(int certificateId);
+    void deleteCertificate(int certificateId);
 }

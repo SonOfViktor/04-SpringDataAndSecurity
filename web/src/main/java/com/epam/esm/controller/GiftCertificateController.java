@@ -4,14 +4,17 @@ import com.epam.esm.assembler.GiftCertificateModelAssembler;
 import com.epam.esm.assembler.TagModelAssembler;
 import com.epam.esm.dto.CertificateTagsDto;
 import com.epam.esm.entity.GiftCertificate;
-import com.epam.esm.entity.Page;
-import com.epam.esm.entity.SelectQueryParameter;
+import com.epam.esm.entity.GiftCertificateFilter;
 import com.epam.esm.entity.Tag;
 import com.epam.esm.service.GiftCertificateService;
 import com.epam.esm.service.GiftCertificateTagDtoService;
 import com.epam.esm.service.TagService;
 import com.epam.esm.validategroup.ForCreate;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +30,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RestController
 @RequestMapping("/certificates")
 @Validated
+@RequiredArgsConstructor
 public class GiftCertificateController {
     public static final String ALL_GIFT_CERTIFICATES = "all_gift_certificates";
     public static final String CERTIFICATE = "certificate";
@@ -34,21 +38,14 @@ public class GiftCertificateController {
     public static final String CREATE = "create";
     public static final String UPDATE = "update";
     public static final String DELETE = "delete";
+
     private final GiftCertificateTagDtoService certificateTagService;
     private final TagService tagService;
     private final GiftCertificateService certificateService;
     private final GiftCertificateModelAssembler certificateAssembler;
     private final TagModelAssembler tagAssembler;
-
-    @Autowired
-    public GiftCertificateController(GiftCertificateTagDtoService certificateTagService, TagService tagService, TagModelAssembler tagAssembler,
-                                     GiftCertificateService certificateService, GiftCertificateModelAssembler assembler) {
-        this.certificateTagService = certificateTagService;
-        this.tagService = tagService;
-        this.certificateService = certificateService;
-        this.certificateAssembler = assembler;
-        this.tagAssembler = tagAssembler;
-    }
+    private final PagedResourcesAssembler<CertificateTagsDto> pagedResourcesGiftCertificateAssembler;
+    private final PagedResourcesAssembler<Tag> pagedResourcesTagAssembler;
 
     @GetMapping("/{id}")
     public EntityModel<GiftCertificate> showCertificate(@PathVariable @Positive int id) {
@@ -61,28 +58,24 @@ public class GiftCertificateController {
     }
 
     @GetMapping("/{id}/tags")
-    public Page<EntityModel<Tag>> showTagWithCertificateId(
-            @PathVariable @Positive Integer id,
-            @RequestParam(required = false, defaultValue = "1") Integer page,
-            @RequestParam(required = false, defaultValue = "10") Integer size) {
+    public CollectionModel<EntityModel<Tag>> showTagWithCertificateId(@PathVariable @Positive Integer id,
+                                                                      Pageable pageable) {
+        Page<Tag> tags = tagService.findTagsByCertificateId(id, pageable);
 
-        Page<Tag> tags = tagService.findTagsByCertificateId(id, page, size);
-
-        return tagAssembler.toPageModel(tags)
+        return pagedResourcesTagAssembler.toModel(tags, tagAssembler)
                 .add(linkTo(methodOn(GiftCertificateController.class).showCertificate(id)).withRel(CERTIFICATE));
     }
 
     @PostMapping
-    public Page<EntityModel<GiftCertificate>> showCertificateWithParameters(
-            @Valid @RequestBody(required = false) SelectQueryParameter queryParam,
-            @RequestParam(required = false, defaultValue = "1") Integer page,
-            @RequestParam(required = false, defaultValue = "10") Integer size) {
+    public CollectionModel<EntityModel<GiftCertificate>> showCertificateWithFilter(
+            Pageable pageable,
+            @Valid @RequestBody(required = false) GiftCertificateFilter queryParam) {
 
         Page<CertificateTagsDto> certificates = (queryParam == null) ?
-                certificateTagService.findAllGiftCertificateTagDto(page, size) :
-                certificateTagService.findGiftCertificateTagDtoByParam(queryParam, page, size);
+                certificateTagService.findAllGiftCertificateTagDto(pageable) :
+                certificateTagService.findGiftCertificateTagDtoByParam(queryParam, pageable);
 
-        return certificateAssembler.toPageModel(certificates)
+        return pagedResourcesGiftCertificateAssembler.toModel(certificates, certificateAssembler)
                 .add(linkTo(UserController.class).withRel(USERS))
                 .add(linkTo(methodOn(GiftCertificateController.class).addCertificate(null)).withRel(CREATE));
     }

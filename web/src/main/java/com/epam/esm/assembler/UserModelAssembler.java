@@ -1,9 +1,7 @@
 package com.epam.esm.assembler;
 
 import com.epam.esm.controller.UserController;
-import com.epam.esm.entity.Page;
 import com.epam.esm.entity.User;
-import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelAssembler;
 import org.springframework.lang.NonNull;
@@ -21,11 +19,5 @@ public class UserModelAssembler implements RepresentationModelAssembler<User, En
         return EntityModel.of(entity)
                 .addIf(!entity.getPayments().isEmpty(), () ->
                         linkTo(UserController.class).slash(entity.getUserId()).slash(PAYMENTS).withRel(PAYMENTS));
-    }
-
-    public Page<EntityModel<User>> toPageModel(Page<User> users) {
-        CollectionModel<EntityModel<User>> entityModels = toCollectionModel(users.getEntities());
-
-        return new Page<>(entityModels, users.getPageMeta());
     }
 }

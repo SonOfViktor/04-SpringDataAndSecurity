@@ -2,8 +2,6 @@ package com.epam.esm.assembler;
 
 import com.epam.esm.controller.GiftCertificateController;
 import com.epam.esm.dto.PaymentDto;
-import com.epam.esm.entity.Page;
-import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelAssembler;
 import org.springframework.lang.NonNull;
@@ -31,11 +29,5 @@ public class OrderModelAssembler implements
         }
 
         return entityModel;
-    }
-
-    public Page<EntityModel<PaymentDto.UserOrderDto>> toPageModel(Page<PaymentDto.UserOrderDto> userOrders) {
-
-        CollectionModel<EntityModel<PaymentDto.UserOrderDto>> entityModels = toCollectionModel(userOrders.getEntities());
-        return new Page<>(entityModels, userOrders.getPageMeta());
     }
 }

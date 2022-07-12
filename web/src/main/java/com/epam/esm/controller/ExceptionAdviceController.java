@@ -3,9 +3,11 @@ package com.epam.esm.controller;
 import com.epam.esm.entity.ErrorCode;
 import com.epam.esm.entity.ErrorInfo;
 import com.epam.esm.exception.ResourceNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.TypeMismatchException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.core.annotation.Order;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -15,11 +17,17 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import javax.persistence.EntityExistsException;
 import javax.validation.ConstraintViolationException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+@Order
 @ControllerAdvice
+@RequiredArgsConstructor
 public class ExceptionAdviceController {
     private static final String RESOURCE_NOT_FOUND = "resource_not_found";
     private static final String ARGUMENT_NOT_VALID = "argument_not_valid";
@@ -27,19 +35,15 @@ public class ExceptionAdviceController {
     private static final String JSON_CONVERSION_FAILURE = "json_conversion_failure";
     private static final String INVALID_URL = "invalid_url";
     private static final String UNSUPPORTED_METHOD = "unsupported_method";
+    public static final String UNIQUE_ENTITY_EXISTS = "unique_entity_exists";
     private static final String GLOBAL_EXCEPTION = "global_exception";
     private static final String METHOD_PARAMETER_NOT_VALID = "method_parameter_not_valid";
     private static final String EXCEPTION_MESSAGE_MAP_KEY = "exception_message";
 
-    MessageSource messageSource;
+    private final MessageSource messageSource;
 
-    @Autowired
-    public ExceptionAdviceController(MessageSource messageSource) {
-        this.messageSource = messageSource;
-    }
-
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorInfo> resourceNotFoundExceptionHandler(ResourceNotFoundException ex, Locale locale) {
+    @ExceptionHandler({ResourceNotFoundException.class, EmptyResultDataAccessException.class})
+    public ResponseEntity<ErrorInfo> resourceNotFoundExceptionHandler(Exception ex, Locale locale) {
         String errorMessage = messageSource.getMessage(RESOURCE_NOT_FOUND, null, locale);
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, makeClarifiedDataMap(ex),
                 ErrorCode.RESOURCE_NOT_FOUND.getCode());
@@ -99,12 +103,21 @@ public class ExceptionAdviceController {
     }
 
     @ExceptionHandler
-    public ResponseEntity<ErrorInfo> noHandlerFoundExceptionHandler (NoHandlerFoundException ex, Locale locale) {
+    public ResponseEntity<ErrorInfo> noHandlerFoundExceptionHandler(NoHandlerFoundException ex, Locale locale) {
         String errorMessage = messageSource.getMessage(INVALID_URL, null, locale);
         ErrorInfo errorInfo = new ErrorInfo(errorMessage, makeClarifiedDataMap(ex),
                 ErrorCode.NO_HANDLER_FOUND.getCode());
 
         return new ResponseEntity<>(errorInfo, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ErrorInfo> entityExistsExceptionHandler(EntityExistsException ex, Locale locale) {
+        String errorMessage = messageSource.getMessage(UNIQUE_ENTITY_EXISTS, null, locale);
+        ErrorInfo errorInfo = new ErrorInfo(errorMessage, makeClarifiedDataMap(ex),
+                ErrorCode.UNIQUE_ENTITY_EXISTS_ERROR.getCode());
+
+        return new ResponseEntity<>(errorInfo, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler

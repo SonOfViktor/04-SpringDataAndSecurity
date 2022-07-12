@@ -2,21 +2,19 @@ package com.epam.esm.aspect;
 
 import com.epam.esm.dto.CertificateTagsDto;
 import com.epam.esm.entity.MethodMetadata;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.Signature;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @Aspect
 public class ServiceLoggingAspect {
-    private static final Logger logger = LoggerFactory.getLogger(ServiceLoggingAspect.class);
-
     @Pointcut("execution(*..CertificateTagsDto com.epam.esm.service.*..update*(..))")
     public void updateServiceMethodPointcut() {
     }
@@ -41,50 +39,40 @@ public class ServiceLoggingAspect {
     public void logUpdateDeleteServiceMethod(JoinPoint joinPoint, CertificateTagsDto result) {
         MethodMetadata methodMetadata = takeMethodMetadata(joinPoint);
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Method {}() from class {} worked successfully. {} affected row",
-                    methodMetadata.methodName(), methodMetadata.className(), result);
-        }
+        log.info("Method {}() from class {} worked successfully. {} affected row",
+                methodMetadata.methodName(), methodMetadata.className(), result);
     }
 
     @AfterReturning(pointcut = "deleteServiceMethodPointcut()", returning = "affectedRow")
     public void logDeleteServiceMethod(JoinPoint joinPoint, int affectedRow) {
         MethodMetadata methodMetadata = takeMethodMetadata(joinPoint);
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Method {}() from class {} worked successfully. {} affected row",
-                    methodMetadata.methodName(), methodMetadata.className(), affectedRow);
-        }
+        log.info("Method {}() from class {} worked successfully. {} affected row",
+                methodMetadata.methodName(), methodMetadata.className(), affectedRow);
     }
 
     @AfterReturning(pointcut = "findDtoServiceMethodPointcut()", returning = "result")
     public void logFindDtoServiceMethod(JoinPoint joinPoint, Object result) {
         MethodMetadata methodMetadata = takeMethodMetadata(joinPoint);
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Method {}() from class {} returned {}",
-                    methodMetadata.methodName(), methodMetadata.className(), result);
-        }
+        log.info("Method {}() from class {} returned {}",
+                methodMetadata.methodName(), methodMetadata.className(), result);
     }
 
     @AfterReturning(pointcut = "addServiceMethodPointcut()", returning = "result")
     public void logAddServiceMethod(JoinPoint joinPoint, Object result) {
         MethodMetadata methodMetadata = takeMethodMetadata(joinPoint);
 
-        if (logger.isInfoEnabled()) {
-            logger.info("Method {}() from class {} returned id {}",
-                    methodMetadata.methodName(), methodMetadata.className(), result);
-        }
+        log.info("Method {}() from class {} returned id {}",
+                methodMetadata.methodName(), methodMetadata.className(), result);
     }
 
     @AfterThrowing(pointcut = "allServiceMethodPointcut()", throwing = "exception")
     public void logExceptionAllServiceMethod(JoinPoint joinPoint, Exception exception) {
         MethodMetadata methodMetadata = takeMethodMetadata(joinPoint);
 
-        if (logger.isErrorEnabled()) {
-            logger.error("Method {}() from class {} thrown exception {}",
-                    methodMetadata.methodName(), methodMetadata.className(), exception);
-        }
+        log.error("Method {}() from class {} thrown exception {}: {}",
+                methodMetadata.methodName(), methodMetadata.className(), exception.getClass(), exception.getMessage());
     }
 
     private MethodMetadata takeMethodMetadata(JoinPoint joinPoint) {

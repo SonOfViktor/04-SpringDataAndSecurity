@@ -2,6 +2,7 @@ package com.epam.esm.entity;
 
 import com.epam.esm.listener.AuditListener;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
@@ -10,12 +11,27 @@ import java.util.Objects;
 
 @Entity
 @Table(schema = "module_4", name = "users")
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter @Setter
+@ToString
+@Builder
 @EntityListeners(AuditListener.class)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private int userId;
+
+    @NotBlank
+    @Size(max = 255)
+    private String email;
+
+    @JsonIgnore
+    @ToString.Exclude
+    @NotBlank
+    @Size(max = 100)
+    private String password;
 
     @NotBlank
     @Size(max = 50)
@@ -25,12 +41,13 @@ public class User {
     @Size(max = 50)
     private String lastName;
 
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
+
     @JsonIgnore
+    @ToString.Exclude
     @OneToMany(mappedBy = "user")
     private List<Payment> payments;
-
-    public User() {
-    }
 
     public User(int userId, String firstName, String lastName) {
         this.userId = userId;
@@ -38,49 +55,16 @@ public class User {
         this.lastName = lastName;
     }
 
-    public int getUserId() {
-        return userId;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public List<Payment> getPayments() {
-        return payments;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return userId == user.userId && Objects.equals(firstName, user.firstName) && Objects.equals(lastName, user.lastName);
+        return Objects.equals(email, user.email);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId, firstName, lastName);
-    }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "userId=" + userId +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                '}';
+        return Objects.hash(email);
     }
 }

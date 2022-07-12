@@ -1,40 +1,46 @@
 package com.epam.esm.service.impl;
 
 import com.epam.esm.dao.UserDao;
-import com.epam.esm.entity.Page;
-import com.epam.esm.entity.PageMeta;
 import com.epam.esm.entity.User;
 import com.epam.esm.exception.ResourceNotFoundException;
 import com.epam.esm.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import javax.persistence.EntityExistsException;
+import java.util.Optional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserDao userDao;
 
-    @Autowired
-    public UserServiceImpl(UserDao userDao) {
-        this.userDao = userDao;
-    }
+    @Override
+    public Page<User> findAllUser(Pageable pageable) {
+        Page<User> users = userDao.findAll(pageable);
 
-    public Page<User> findAllUser(int page, int size) {
-        int userTotalElements = userDao.countUser();
-        int totalPages = (int) Math.ceil((double) userTotalElements / size);
-
-        if(page > totalPages) {
-            throw new ResourceNotFoundException("There is no users in the database for " + page + " page");
+        if(users.isEmpty()) {
+            throw new ResourceNotFoundException("There are no users on " + pageable.getPageNumber() + " page");
         }
 
-        PageMeta pageMeta = new PageMeta(size, userTotalElements, totalPages, page);
+        return users;
+    }
 
-        int offset = page * size - size;
-        List<User> users = userDao.readAllUser(offset, size);
+    @Override
+    public User createUser(User user) {
+        if(userDao.existsByEmail(user.getEmail())) {
+            throw new EntityExistsException("The user with email " + user.getEmail() + " has already been registered");
+        }
 
-        return new Page<>(users, pageMeta);
+        return userDao.save(user);
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+
+        return userDao.findByEmail(email);
     }
 }

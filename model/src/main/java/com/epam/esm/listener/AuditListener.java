@@ -1,14 +1,12 @@
 package com.epam.esm.listener;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+@Slf4j
 public class AuditListener {
-    public static final Logger logger = LoggerFactory.getLogger(AuditListener.class);
-
     private enum AuditOperation {
         INSERT, UPDATE, DELETE
     }
@@ -31,6 +29,6 @@ public class AuditListener {
     private void audit(AuditOperation operation, Object entity) {
         LocalDateTime timestamp = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
-        logger.info("Operation {} on {} was made at {}", operation, entity, timestamp);
+        log.info("Operation {} on {} was made at {}", operation, entity, timestamp);
     }
 }

@@ -1,9 +1,10 @@
 package com.epam.esm.service;
 
 import com.epam.esm.dto.CertificateTagsDto;
-import com.epam.esm.entity.Page;
-import com.epam.esm.entity.SelectQueryParameter;
+import com.epam.esm.entity.GiftCertificateFilter;
 import com.epam.esm.exception.ResourceNotFoundException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  * The interface provide methods to control business logic related with gift certificates together with tags.
@@ -20,21 +21,19 @@ public interface GiftCertificateTagDtoService {
     /**
      * Find gift certificate with tags for specified page.
      *
-     * @param page number of page with gift certificates and tags
-     * @param size amount objects in one page
+     * @param pageable the pageable to request a paged result, can be Pageable.unpaged(), must not be null.
      * @return the page with certificates tags
      */
-    Page<CertificateTagsDto> findAllGiftCertificateTagDto(int page, int size);
+    Page<CertificateTagsDto> findAllGiftCertificateTagDto(Pageable pageable);
 
     /**
      * Find gift certificates with tags according to specified parameters for specified page.
      *
      * @param params the parameters determinant search for gift certificates
-     * @param page number of page with gift certificates and tags
-     * @param size amount objects in one page
+     * @param pageable the pageable to request a paged result, can be Pageable.unpaged(), must not be null.
      * @return the page with certificates and tags
      */
-    Page<CertificateTagsDto> findGiftCertificateTagDtoByParam(SelectQueryParameter params, int page, int size);
+    Page<CertificateTagsDto> findGiftCertificateTagDtoByParam(GiftCertificateFilter params, Pageable pageable);
 
     /**
      * Find gift certificate and tags with specified gift certificate id.

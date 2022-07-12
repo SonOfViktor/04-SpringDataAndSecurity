@@ -1,91 +1,107 @@
 package com.epam.esm.service.impl;
 
 import com.epam.esm.dao.GiftCertificateDao;
+import com.epam.esm.dao.specification.GiftCertificateSpecification;
 import com.epam.esm.entity.GiftCertificate;
-import com.epam.esm.entity.Page;
-import com.epam.esm.entity.PageMeta;
-import com.epam.esm.entity.SelectQueryParameter;
+import com.epam.esm.entity.GiftCertificateFilter;
 import com.epam.esm.exception.ResourceNotFoundException;
 import com.epam.esm.service.GiftCertificateService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+
+import static org.springframework.data.jpa.domain.Specification.where;
 
 @Service
 @Transactional(rollbackFor = Exception.class)
+@RequiredArgsConstructor
 public class GiftCertificateServiceImpl implements GiftCertificateService {
     private final GiftCertificateDao giftCertificateDao;
-
-    @Autowired
-    public GiftCertificateServiceImpl(GiftCertificateDao giftCertificateDao) {
-        this.giftCertificateDao = giftCertificateDao;
-    }
+    private final GiftCertificateSpecification spec;
 
     @Override
     public GiftCertificate addGiftCertificate(GiftCertificate certificate) {
-        return giftCertificateDao.createGiftCertificate(certificate);
+        LocalDateTime createTime = LocalDateTime.now();
+        certificate.setCreateDate(createTime);
+        certificate.setLastUpdateDate(createTime);
+
+        return giftCertificateDao.save(certificate);
     }
 
     @Override
-    public Page<GiftCertificate> findAllCertificates(int page, int size) {
-        PageMeta pageMeta = createPageMeta(page, size, null);
+    public Page<GiftCertificate> findAllCertificates(Pageable pageable) {
+        Page<GiftCertificate> certificates = giftCertificateDao.findAll(pageable);
 
-        int offset = page * size - size;
-        List<GiftCertificate> certificates = giftCertificateDao.readAllCertificate(offset, size);
+        if(certificates.isEmpty()) {
+            throw new ResourceNotFoundException("There are no certificates on " + pageable.getPageNumber() + " page");
+        }
 
-        return new Page<>(certificates, pageMeta);
+        return certificates;
     }
 
     @Override
-    public Page<GiftCertificate> findCertificatesWithParams(SelectQueryParameter params, int page, int size) {
-        PageMeta pageMeta = createPageMeta(page, size, params);
+    public Page<GiftCertificate> findCertificatesWithParams(GiftCertificateFilter filter, Pageable pageable) {
+        Specification<GiftCertificate> specification = where(spec.hasTags(filter.tagNames()))
+                .and(where(spec.hasName(filter.certificateName()))
+                        .or(spec.hasDescription(filter.certificateDescription())));
 
-        int offset = page * size - size;
-        List<GiftCertificate> certificates = giftCertificateDao.readGiftCertificateWithParam(params, offset, size);
+        Page<GiftCertificate> certificates = giftCertificateDao.findAll(specification, pageable);
 
-        return new Page<>(certificates, pageMeta);
+        if (certificates.getContent().isEmpty()) {
+            throw new ResourceNotFoundException("There is no certificates with such filter " + filter +
+                    " in database");
+        }
+
+        return certificates;
     }
 
     @Override
     public GiftCertificate findCertificateById(int certificateId) {
-        Optional<GiftCertificate> certificateOptional = giftCertificateDao.readGiftCertificate(certificateId);
+        Optional<GiftCertificate> certificateOptional = giftCertificateDao.findById(certificateId);
 
         return certificateOptional.orElseThrow(() ->
                 new ResourceNotFoundException("There is no certificate with Id " + certificateId + " in database"));
     }
 
     @Override
-    public GiftCertificate updateGiftCertificate(GiftCertificate certificate, int id) {
-        certificate.setGiftCertificateId(id);
+    public GiftCertificate updateGiftCertificate(GiftCertificate newCertificate, int id) {
 
-        return giftCertificateDao.updateGiftCertificate(certificate)
+        return giftCertificateDao.findById(id)
+                .map(cert -> fillCertificateNewValues(cert, newCertificate))
                 .orElseThrow(() -> new ResourceNotFoundException("Certificate with id " + id +
                         " can't be updated. It was not found"));
     }
 
     @Override
-    public int deleteCertificate(int id) {
-        int affectedRow = giftCertificateDao.deleteGiftCertificate(id);
-
-        if (affectedRow == 0) {
-            throw new ResourceNotFoundException("Certificate with id " + id +
-                    " can't be deleted. It was not found");
-        }
-
-        return affectedRow;
+    public void deleteCertificate(int id) {
+        giftCertificateDao.deleteById(id);
     }
 
-    private PageMeta createPageMeta(int page, int size, SelectQueryParameter params) {
-        int giftCertificatesTotalElements = giftCertificateDao.countGiftCertificate(params);
-        int totalPages = (int) Math.ceil((double) giftCertificatesTotalElements / size);
-
-        if (page > totalPages) {
-            throw new ResourceNotFoundException("There is no certificates in the database on " + page + " page");
+    private GiftCertificate fillCertificateNewValues(GiftCertificate updatedCertificate, GiftCertificate updatingCertificate) {
+        if (StringUtils.isNotBlank(updatingCertificate.getName())) {
+            updatedCertificate.setName(updatingCertificate.getName().trim());
         }
+        if (StringUtils.isNotBlank(updatingCertificate.getDescription())) {
+            updatedCertificate.setDescription(updatingCertificate.getDescription().trim());
+        }
+        if (updatingCertificate.getPrice() != null) {
+            updatedCertificate.setPrice(updatingCertificate.getPrice());
+        }
+        if (updatingCertificate.getDuration() > 0) {
+            updatedCertificate.setDuration(updatingCertificate.getDuration());
+        }
+        if (!updatingCertificate.getTags().isEmpty()) {
+            updatedCertificate.setTags(updatingCertificate.getTags());
+        }
+        updatedCertificate.setLastUpdateDate(LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS));
 
-        return new PageMeta(size, giftCertificatesTotalElements, totalPages, page);
+        return updatedCertificate;
     }
 }
